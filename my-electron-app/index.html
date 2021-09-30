@@ -1,0 +1,73 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>SSIM</title>
+  <meta name="description" content="Star Sonata Inventory Manager">
+  <meta name="author" content="Eric Malmquist">
+
+  <meta property=g:title" content="Star Sonata Inventory Manager">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https_WIP">
+  <meta property="og:description" content="An easier way to search inventory.">
+  <meta property="og:image" content="image_WIP.png">
+
+  <link rel="stylesheet" href="css/styles.css?v=1.0">
+
+</head>
+
+<body>
+	<h1> Star Sonata Inventory Manager</h1>
+	
+	
+	<form>
+		<div class=searchRow>
+			<input type="text" name="search" id="search" placeholder="Search..." />
+		</div>
+		<button>Submit</button>
+	</form>
+	
+	<button class="refresh_inv">Refresh Inventory</button>
+	<div id="table-wrapper">
+		<div id="table-scroll">
+			<table>
+			<caption> Search Query Results </caption>
+			<thead>
+				<tr>
+					<th>Item Name</th>
+					<th>Quantity</th>
+					<th>Ship</th>
+					<th>Alias</th>
+					<th>Character</th>
+					<th>Account</th>
+					<th>Equipped</th>
+					<th>Dockedship</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>Minor Docking Augmenter</td>
+					<td>12</td>
+					<td>MyMainAccount</td>
+					<td>MyMainChar</td>
+					<td>Zebucart</td>
+				</tr>
+				<tr>
+					<td>Ion Peashooter</td>
+					<td>1</td>
+					<td>MyMainAccount</td>
+					<td>MyMainChar</td>
+					<td>Zebucart</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+  </div>				
+
+
+   <script src="js/renderer.js"></script>
+</body>
+</html>

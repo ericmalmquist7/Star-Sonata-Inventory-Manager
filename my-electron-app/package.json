@@ -1,0 +1,29 @@
+{
+  "name": "my-electron-app",
+  "version": "1.0.0",
+  "description": "Star Sonata Inventory Manager",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron ."
+  },
+  "author": "Eric Malmquist",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^15.0.0"
+  },
+  "configurations": [
+    {
+      "name": "Debug Main Process",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
+      "windows": {
+        "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
+      },
+      "args" : ["."],
+      "outputCapture": "std"
+    }
+	]
+}

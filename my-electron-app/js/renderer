@@ -1,18 +1,26 @@
 //Library Imports
-/* var util = require('util');
-console.log("Util Loaded");
-var request = require('request');
-console.log("Request Loaded");
-var cheerio = require('cheerio');
-console.log("Cherrio Loaded");
-var xml2js = require('xml2js');
-console.log("XML2JS Loaded");
-var fs = require('fs');
-console.log("FS Loaded"); */
+const { remote } = require('electron');
+console.log(require.resolve('electron'));
+const {app} = remote;
+console.log(app);
+
+const util = require('util');
+const request = require('request');
+const cheerio = require('cheerio');
+const xml2js = require('xml2js');
+const fs = require('fs');
+
 
 const form = document.querySelector('form');
+const loadInv = document.querySelector('.refresh_inv');
 const tbody = document.querySelector('tbody');
 	
+var parser = new xml2js.Parser();
+
+var inventory = {};
+
+var lastUpdate = 0;
+
 function onSearchQuery(e){
 	const query = document.getElementById('search').value;
 	e.preventDefault();
@@ -36,22 +44,13 @@ function addRow(item, quantity, account, character, ship){
 	`;
 }
 
-form.addEventListener('submit', onSearchQuery);
-
-
-var parser = new xml2js.Parser();
-
-var inventory = {};
-
-var lastUpdate = 0;
-
-
-function updateInv(){
+function updateInv(e){
+	console.log("Updating inventory");
 
 	return new Promise(function(resolve){		
 		var status = "";
 		
-		fs.readFile('./accounts.json', async function read(err, data) {
+		fs.readFile(app.getPath("appData")+ '/accounts.json', async function read(err, data) {
 			if (err) {
 				console.log("Error reading file:\n" + err);
 				return message.reply("Error reading file: \n" + err);
@@ -181,3 +180,6 @@ function accountUpdate(u, p)
 		});
 	});
 }
+
+form.addEventListener('submit', onSearchQuery);
+loadInv.addEventListener('click', updateInv);
