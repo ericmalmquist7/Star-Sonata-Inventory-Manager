@@ -1,9 +1,153 @@
-table {
-	width: 800px;
-	border-spacing: 0px;
+:root {
+	--black: #1e273e;
+	--white: #c8d1ea;
+	--base: #d5e1ff;
+	--darker_base: #1f2e53;
+  }
+
+  :root {
+	--white: #1e273e;
+	--black: #c8d1ea;
+	--darker_base: #d5e1ff;
+	--base: #1f2e53;
+  }
+
+
+html,
+body {
+	height: 100%;
+	margin: 0;
+  }
+
+#box{
+	height: 100%;
+	display: flex;
+	flex-flow: column;
+}
+
+h1{
+	color: var(--black);
+	text-align: center;
+	font-weight: bold;
+}
+
+h2, h3, h4, label{
+	color: var(--white);
 	text-align: center;
 }
 
+
+#header {
+	flex: 0 1 auto;
+	text-align: center;
+	background-color: var(--base);
+}
+
+#topContainer {
+	display: flex;
+}
+
+#searchQuery {
+	width: 40%;
+	background-color: var(--black);
+}
+
+#searchQuery .searchRow{
+	display: flex;
+	padding-left: 5%;
+	width: 90%;
+	min-width: 400px;
+}
+
+#searchQuery .searchRow input{
+	flex: 1 1 auto;
+}
+
+#accountSelection {
+	width: 60%;
+	display: flex;
+	background-color: var(--black);
+	overflow-x: auto;
+	overflow-y: hidden;
+	flex-flow: row-reverse;
+}
+#accountSelection > div{
+	flex: 0 0 auto;
+}
+
+
+.accountContainer{
+	height: 100%;
+	display: flex;
+	flex-flow: column;
+	padding: 5px;
+}
+
+.account, .character{
+	flex: 0 1 20px;
+	display: flex;
+	text-align: left;
+	align-items: center;
+	height: 20px;
+	padding: 2px;
+}
+
+
+.accountModify{
+	display: flex;
+	flex-flow: column;
+	background-color: var(--black);
+	padding: 10px 10px;
+
+}
+
+button{
+
+	background-color: var(--base);
+	border: none;
+	color: var(--black);
+	padding: 10px 16px;
+	text-align: center;
+	text-decoration: none;
+	display: inline-block;
+	font-size: 16px;
+	margin: 4px 2px;
+	cursor: pointer;
+	font-weight: bold;
+}
+
+form > button{
+	width: 90%;
+}
+
+.remove_account{
+	width: min-content;
+	align-self: center;
+}
+
+hr{
+	border: 0;
+	clear:both;
+	display:block;
+	width: 96%;                
+	background-color:#000;
+	height: 1px;
+}
+
+
+#table-wrapper {
+	display: flex;
+	flex-flow: column;
+	flex: 1 1 auto;
+	overflow-y: auto;
+	align-items: center;
+	background-color: var(--darker_base);
+}
+table {
+	width: 98%;
+	border-spacing: 0px;
+	text-align: center;
+}
 
 table, th, td {
 	border: 1px solid #000;
@@ -17,18 +161,16 @@ th, td {
 tr:nth-child(even) {
 	background-color: #fff;
 }
+
 tr:nth-child(odd) {
 	background-color: #ddd;
 }
-#table-wrapper {
-	position:relative;
-  }
-  #table-scroll {
-	height:850px;
-	overflow:auto;  
-	margin-top:20px;
-  }
-  
-  #table-wrapper table {
-	width:100%;
-  }
+
+
+
+
+#footer {
+	flex: 0 1 40px;
+	text-align: center;
+	background-color: var(--black);
+}

@@ -20,53 +20,131 @@
 </head>
 
 <body>
-	<h1> Star Sonata Inventory Manager</h1>
-	
-	
-	<form>
-		<div class=searchRow>
-			<input type="text" name="search" id="search" placeholder="Search..." />
-		</div>
-		<button>Submit</button>
-	</form>
-	
-	<button class="refresh_inv">Refresh Inventory</button>
-	<div id="table-wrapper">
-		<div id="table-scroll">
-			<table>
-			<caption> Search Query Results </caption>
-			<thead>
-				<tr>
-					<th>Item Name</th>
-					<th>Quantity</th>
-					<th>Ship</th>
-					<th>Alias</th>
-					<th>Character</th>
-					<th>Account</th>
-					<th>Equipped</th>
-					<th>Dockedship</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>Minor Docking Augmenter</td>
-					<td>12</td>
-					<td>MyMainAccount</td>
-					<td>MyMainChar</td>
-					<td>Zebucart</td>
-				</tr>
-				<tr>
-					<td>Ion Peashooter</td>
-					<td>1</td>
-					<td>MyMainAccount</td>
-					<td>MyMainChar</td>
-					<td>Zebucart</td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
-  </div>				
+	<div id=box>
+		<div id=header>
+			<h1> Star Sonata Inventory Manager</h1>
+			<div id="topContainer">
+		
+				<div id="searchQuery">
+					<form>
+						<h2>Search Options</h2>
+						<div class=searchRow>
+							<label>Any of these words:&nbsp;&nbsp;&nbsp;</label>
+							<input type="text" id="search_any"/>
+						</div>
+						<div class=searchRow>
+							<label>Exact word or phrase:</label>
+							<input type="text" id="search_exact"/>
+						</div>
+						<div class=searchRow>
+							<label>Exclude these words:&nbsp;</label>
+							<input type="text" id="search_exclude"/>
+						</div>
+						<br>
+						<button>Search</button>
+					</form>
+				</div>
+		
 
+				<div id="accountSelection">
+
+					<div class="accountContainer">
+						<div class ="account">
+							<input type="radio">
+							<h4>Longcat77</h4>
+						</div>
+
+						<hr>
+
+						<div class = "character">
+							<input type="radio">
+							<h4>longcat</h4>
+						</div>
+						<div class = "character">
+							<input type="radio">
+							<h4>tacgnol</h4>
+						</div>
+						<div class = "character">
+							<input type="radio">
+							<h4>shortcat</h4>
+						</div>
+						<div class = "character">
+							<input type="radio">
+							<h4>fatcat</h4>
+						</div>
+						<div class = "character">
+							<input type="radio">
+							<h4>widecat</h4>
+						</div>
+						<button id="remove_account">Remove</button>
+					
+					</div>
+					<div class="accountContainer">
+						<div class ="account">
+							<input type="radio">
+							<h4>Longcat77</h4>
+						</div>
+
+						<hr>
+
+						<div class = "character">
+							<input type="radio">
+							<h4>longcat</h4>
+						</div>
+						<div class = "character">
+							<input type="radio">
+							<h4>tacgnol</h4>
+						</div>
+						<div class = "character">
+							<input type="radio">
+							<h4>shortcat</h4>
+						</div>
+						<div class = "character">
+							<input type="radio">
+							<h4>fatcat</h4>
+						</div>
+						<div class = "character">
+							<input type="radio">
+							<h4>widecat</h4>
+						</div>
+						<button id="remove_account">Remove</button>
+					</div>
+					
+					
+				</div>
+				
+				<div class="accountModify">
+					<button id="add_account">Add<br>Account</button>
+					<button id="refresh_inv">Refresh<br>Inventory</button>
+				</div>
+		
+			</div>
+		</div>
+		
+		<div id="table-wrapper">
+			<table>
+				<h3 id="searchQueryResults"> Search Query Results </h3>
+				<thead>
+					<tr>
+						<th>Item Name</th>
+						<th>Quantity</th>
+						<th>Ship</th>
+						<th>Alias</th>
+						<th>Character</th>
+						<th>Account</th>
+						<th>Equipped</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+			&nbsp;
+		</div>
+	
+		<div id=footer>
+			<h2> Buy me a coffee</h2>
+		</div>		
+	</div>
 
    <script src="js/renderer.js"></script>
 </body>

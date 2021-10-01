@@ -11,8 +11,11 @@ var parser = new xml2js.Parser();
 var inventory = {};
 var data = [];
 
+
+//INTERPROCESS COMMUNICATION
+
 ipcMain.on('get_saved_data', async (event) => {
-  var data_path = app.getPath("appData") + "/SSIM/accounts.json";
+  var data_path = app.getPath("appData") + "/SSIM/data.json";
   await updateInv(data_path);
   data = parseData();
   event.reply('get_saved_data_reply', data);
@@ -23,14 +26,71 @@ ipcMain.on('select_data', (event, args) => {
 	event.reply('select_data_reply', selectedData);
 })
 
+ipcMain.on('show_accounts', async (event) => {
+	if(isEmpty(inventory)){
+		var data_path = app.getPath("appData") + "/SSIM/data.json";
+		await updateInv(data_path);
+		data = parseData();
+	}
+	var response = {};
+	response.accounts = getAccountList();	
+	event.reply('show_accounts_reply', response);
+	
+})
+
+ipcMain.on('remove_account', (event, args) => {
+	var name = args.name;
+	//remove account
+	//respond with success
+	args.success = true;
+	event.reply('remove_account_reply', args);
+})
+
+ipcMain.on('add_account', (event, args) => {
+	var un = args.un;
+	var pw = args.pw;
+	//attempt login of account
+	//if success, add to account.json
+	//respond with success
+	var success = true;
+	event.reply('add_account_reply', success);
+})
+
 function selectData(args){
-	var must_include = args.must_include;
+	var search_any = args.search_any;
+	var search_exact = args.search_exact;
+	if (search_exact != ''){
+		search_any = search_any.concat(args.search_exact);
+	}
+	var search_exclude = args.search_exclude;
 	
 	var selectedData = [];
 	for(var d in data){
-		for(var i in must_include){
-			if (data[d].item.includes(must_include[i])){
-				selectedData.push(data[d]);
+		var item_str = data[d].item.toLowerCase();
+		for(var i in search_any){
+			if (item_str.includes(search_any[i])){
+				//Found item, now we need to check for exclude fields
+				var isExcluded = false;
+				for(var e in search_exclude){
+					if(item_str.includes(search_exclude[e])){
+						isExcluded = true;
+						break;
+					}
+				}
+				if(!isExcluded){
+					//Item is in _any_ and not _exclude_, now check for _exact_
+					if(search_exact != ""){
+						if(item_str == search_exact){
+							selectedData.push(data[d]);
+							break;
+						}
+					}
+					else{
+						//No exact terms supplied.
+						selectedData.push(data[d]);
+						break;
+					}
+				}
 			}
 		}
 	}
@@ -125,6 +185,22 @@ function parseShipData(account, character, _ship, isDocked){
 	return dataPoints;
 }
 
+function getAccountList(){
+	accounts = [];
+	for(var a in inventory)
+	{
+		accounts[a] = {};
+		accounts[a].characters = [];
+
+		accounts[a].name = inventory[a];
+		for(var c in inventory[a]){
+			accounts[a].characters[c] = inventory[a][c]
+		}
+	}
+	return accounts;
+}
+
+
 function updateInv(data_path){
 	console.log("Updating inventory");
 	
@@ -157,6 +233,7 @@ function updateInv(data_path){
 			resolve(status);
 		});
 	});
+	
 }
 
 function accountUpdate(u, p)
@@ -263,6 +340,10 @@ function accountUpdate(u, p)
 			});
 		});
 	});
+}
+
+function isEmpty(obj) {
+    return Object.keys(obj).length === 0;
 }
 
 function hasProp (obj, prop) {
