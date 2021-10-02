@@ -30,37 +30,6 @@ function removeEmptyStrings(s_array){
 	return temp;
 }
 
-function onSearchQuery(e){	
-	e.preventDefault();
-	clearRows();
-
-	const search_any = document.getElementById('search_any').value;
-	const search_exact = document.getElementById('search_exact').value;
-	const search_exclude = document.getElementById('search_exclude').value;
-
-	var args = {};
-	args.search_any = removeEmptyStrings(search_any.trim().toLowerCase().split(' '));
-	args.search_exact = search_exact.trim().toLowerCase();
-	args.search_exclude = removeEmptyStrings(search_exclude.trim().toLowerCase().split(' '));
-
-	ipcRenderer.send("select_data", args)
-}
-
-function onAddAccount(e){
-	ipcRenderer.send('show_accounts');
-
-}
-
-function onRemoveAccount(e){
-	var args = {}
-	args.name = e.target.value;
-	ipcRenderer.send("remove_account", args);
-}
-
-function onRefreshInventory(){
-	ipcRenderer.send("get_saved_data");
-}
-
 function clearRows(){
 	tbody.innerHTML = "";
 }
@@ -80,10 +49,44 @@ function addRow(dataPoint){
 }
 
 
+function onSearchQuery(e){	
+	e.preventDefault();
+	clearRows();
 
-ipcRenderer.on('get_saved_data_reply', (event, new_inventory) => {
-  console.log(new_inventory) // prints inventory
-  inventory = new_inventory;
+	const search_any = document.getElementById('search_any').value;
+	const search_exact = document.getElementById('search_exact').value;
+	const search_exclude = document.getElementById('search_exclude').value;
+
+	var args = {};
+	args.search_any = removeEmptyStrings(search_any.trim().toLowerCase().split(' '));
+	args.search_exact = search_exact.trim().toLowerCase();
+	args.search_exclude = removeEmptyStrings(search_exclude.trim().toLowerCase().split(' '));
+
+	ipcRenderer.send("select_data", args)
+}
+
+function onAddAccount(e){
+	var args = {};
+	args.un = "Longcat7777";
+	args.pw = "I dont know!!!"
+	ipcRenderer.send('add_account', args);
+
+}
+
+function onRemoveAccount(e){
+	var args = {}
+	args.name = e.target.value;
+	ipcRenderer.send("remove_account", args);
+}
+
+function onRefreshInventory(){
+	ipcRenderer.send("refresh");
+}
+
+
+ipcRenderer.on('refresh_reply', (event, new_inventory) => {
+  console.log(new_inventory); // prints inventory
+  ipcRenderer.send('show_accounts');
 })
 
 ipcRenderer.on('select_data_reply', (event, selected_data) => {
@@ -101,8 +104,8 @@ ipcRenderer.on('select_data_reply', (event, selected_data) => {
 
 ipcRenderer.on('show_accounts_reply', (event, args) =>{
 	accountSelection.innerHTML = '';
+	console.log(args.accounts)
 	for(var a in args.accounts){
-
 		var accountContainer = document.createElement("div");
 		accountContainer.className="accountContainer";
 
@@ -115,13 +118,21 @@ ipcRenderer.on('show_accounts_reply', (event, args) =>{
 					</div>
 
 					<hr>`
-
-		for(var c in args.accounts[a].characters){
+		if(args.accounts[a].length === 0){
 			var newChar = `<div class = "character">
-			<input type="radio">
-			<h4 class="characterName">${c}</h4>
-		</div>`
+			<h4>Account not loaded</h4>
+			</div>`
 			newHtml += newChar;
+		}
+		else{
+			for(var c in args.accounts[a]){
+				var charName = args.accounts[a][c]
+				var newChar = `<div class = "character">
+				<input type="radio">
+				<h4 class="characterName">${charName}</h4>
+				</div>`
+				newHtml += newChar;
+			}
 		}
 
 		accountContainer.innerHTML += newHtml;
@@ -137,7 +148,13 @@ ipcRenderer.on('show_accounts_reply', (event, args) =>{
 })
 
 ipcRenderer.on('add_account_reply', (event, response) => {
-
+	if(response.success){
+		console.log("Added account " + response.name)
+	}
+	else{
+		console.log("Failed to add account " + response.name)
+	}
+	ipcRenderer.send('show_accounts');
   })
 
 ipcRenderer.on('remove_account_reply', (event, response) => {
@@ -147,6 +164,7 @@ ipcRenderer.on('remove_account_reply', (event, response) => {
 	else{
 		console.log("Failed to remove account " + response.name)
 	}
+	ipcRenderer.send('show_accounts');
 })
 
 refreshInvBtn.addEventListener('click', onRefreshInventory);

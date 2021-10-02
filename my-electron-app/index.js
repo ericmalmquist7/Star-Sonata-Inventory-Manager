@@ -5,20 +5,24 @@ var request = require('request');
 const cheerio = require('cheerio');
 const xml2js = require('xml2js');
 const fs = require('fs');
+const { xml } = require('cheerio/lib/static');
+
+var saved_data_path = app.getPath("appData") + "/SSIM/data.json";
+var characters = {};
+var saved_data = {};
+
+var data = [];
 
 var parser = new xml2js.Parser();
 
-var inventory = {};
-var data = [];
 
 
 //INTERPROCESS COMMUNICATION
 
-ipcMain.on('get_saved_data', async (event) => {
-  var data_path = app.getPath("appData") + "/SSIM/data.json";
-  await updateInv(data_path);
-  data = parseData();
-  event.reply('get_saved_data_reply', data);
+ipcMain.on('refresh', async (event) => {
+  var xml_inventory = await updateInv(getSavedData(saved_data_path, true));
+  data = parseData(xml_inventory);
+  event.reply('refresh_reply', data);
 })
 
 ipcMain.on('select_data', (event, args) => {
@@ -26,35 +30,74 @@ ipcMain.on('select_data', (event, args) => {
 	event.reply('select_data_reply', selectedData);
 })
 
-ipcMain.on('show_accounts', async (event) => {
-	if(isEmpty(inventory)){
-		var data_path = app.getPath("appData") + "/SSIM/data.json";
-		await updateInv(data_path);
-		data = parseData();
+ipcMain.on('show_accounts', (event) => {
+	if(isEmpty(saved_data)){
+		saved_data = getSavedData(saved_data_path);
 	}
-	var response = {};
-	response.accounts = getAccountList();	
+
+	var accounts = [];
+	for(var i in saved_data.accounts)
+	{
+		var a = saved_data.accounts[i].un
+		accounts[a] = [];
+		for(var c in characters[a]){
+			accounts[a].push(characters[a][c])
+		}
+		console.log(accounts);
+	}
+	var response = {};	
+	response.accounts = accounts;
 	event.reply('show_accounts_reply', response);
 	
 })
 
 ipcMain.on('remove_account', (event, args) => {
 	var name = args.name;
-	//remove account
-	//respond with success
-	args.success = true;
+	args.success = false;
+
+	saved_data = getSavedData(saved_data_path, true);
+
+	var index = -1;
+	for(var i in saved_data.accounts){
+		if(saved_data.accounts[i].un === name){
+			index = i;
+			break;
+		}
+	}
+	
+	if( index === -1){
+		args.success = false;
+	}
+	else{
+		saved_data.accounts.splice(index, 1)
+		args.success = updateSavedData(saved_data_path, saved_data);
+	}
+
 	event.reply('remove_account_reply', args);
 })
 
 ipcMain.on('add_account', (event, args) => {
-	var un = args.un;
-	var pw = args.pw;
-	//attempt login of account
-	//if success, add to account.json
-	//respond with success
-	var success = true;
+	var _un = args.un;
+	var _pw = args.pw;
+	//TODO add encrpytion
+	saved_data = getSavedData(saved_data_path, true);
+	
+	var found = false;
+	for (var i in saved_data.accounts){
+		if(saved_data.accounts[i].un === _un){
+			found = true;
+			saved_data.accounts[i] = {un:_un, pw:_pw};
+		}
+	}
+	if(!found) saved_data.accounts.push({un:_un, pw:_pw});
+	var success = updateSavedData(saved_data_path, saved_data)
+
+	var args = {}
+	args.success = success;
+	args.name = _un;
 	event.reply('add_account_reply', success);
 })
+
 
 function selectData(args){
 	var search_any = args.search_any;
@@ -97,6 +140,7 @@ function selectData(args){
 	return selectedData;
 }
 
+
 class DataPoint {
 	constructor(account, character, ship, alias, item, quantity, isDocked, isEquipped) {
 	  this.account = account;
@@ -108,22 +152,22 @@ class DataPoint {
 	  this.isDocked = isDocked;
 	  this.isEquipped = isEquipped;
 	}
-  }
+}
 
-function parseData(){
+function parseData(xml_inventory){
 
 	var dataPoints = [];
 
-	for(var account in inventory){
-		for(var character in inventory[account]){
-			for(var ship in inventory[account][character].inventory.DOCKEDSHIP){
-				var _ship = inventory[account][character].inventory.DOCKEDSHIP[ship].SHIP[0];
+	for(var account in xml_inventory){
+		for(var character in xml_inventory[account]){
+			for(var ship in xml_inventory[account][character].inventory.DOCKEDSHIP){
+				var _ship = xml_inventory[account][character].inventory.DOCKEDSHIP[ship].SHIP[0];
 
 				var new_datapoints = parseShipData(account, character, _ship, true);
 				dataPoints = dataPoints.concat(new_datapoints);
 			}
-			for(var ship in inventory[account][character].inventory.SHIP){
-				var _ship = inventory[account][character].inventory.SHIP[ship];
+			for(var ship in xml_inventory[account][character].inventory.SHIP){
+				var _ship = xml_inventory[account][character].inventory.SHIP[ship];
 				
 				var new_datapoints = parseShipData(account, character, _ship, false);
 				dataPoints = dataPoints.concat(new_datapoints);
@@ -185,61 +229,78 @@ function parseShipData(account, character, _ship, isDocked){
 	return dataPoints;
 }
 
-function getAccountList(){
-	accounts = [];
-	for(var a in inventory)
-	{
-		accounts[a] = {};
-		accounts[a].characters = [];
 
-		accounts[a].name = inventory[a];
-		for(var c in inventory[a]){
-			accounts[a].characters[c] = inventory[a][c]
+function getSavedData(data_path, includePw){
+	console.log("Retrieving saved data");
+	var read_data;
+	try {
+		read_data = fs.readFileSync(data_path);
+	  } catch (err) {
+		if (err.code == 'ENOENT'){
+			console.error("Could not find account file at " + data_path);
 		}
+		else console.error("Error reading file:\n" + err);
+		return null;
+	  }
+		
+	var saved_data = JSON.parse(read_data);
+	if(includePw === "undefined" || !includePw){
+		for(var a in saved_data.accounts){
+			saved_data.accounts[a].pw = "";
+		} 
+		
 	}
-	return accounts;
+	console.log("Done");
+	return saved_data;
 }
 
+function updateSavedData(data_path, newData){
+	console.log("Saving data");
+	try {
+		var data_str = JSON.stringify(newData);
+		fs.writeFileSync(data_path, data_str);
+	  } catch (err) {
+		if (err.code == 'ENOENT'){
+			console.error("Could not find account file at " + data_path);
+		}
+		else console.error("Error reading file:\n" + err);
+		return false;
+	  }
+	console.log("Done");
+	return true;
+}
 
-function updateInv(data_path){
+async function updateInv(saved_data){
 	console.log("Updating inventory");
-	
-	return new Promise(function(resolve){		
-		var status = "";
+	console.log("Updating " + saved_data.accounts.length + " accounts");
+			
+	var xml_inventorys = {};
+
+	for(k=0; k < saved_data.accounts.length; k++)
+	{
+		var a = saved_data.accounts[k].un;
+		var p = saved_data.accounts[k].pw;
+		//TODO Add encryption
+
 		
-		fs.readFile(data_path, async function read(err, data) {
-			if (err) {
-				console.log("Error reading file:\n" + err);
-				if (err.code == 'ENOENT'){
-					console.log("Could not find account file at " + data_path);
-				}
-				return "Error reading file: \n" + err;
-			}
-			var accountObj = JSON.parse(data);
-			
-			console.log("Updating " + accountObj.accounts.length + " accounts");
-			
-			inventory = {};
-			
-			
-			for(k=0; k < accountObj.accounts.length; k++)
-			{
-				var u = accountObj.accounts[k].un;
-				var p = accountObj.accounts[k].pw;
-				
-				status = await accountUpdate(u, p);
-			
-			}
-			resolve(status);
-		});
-	});
+		var promise = accountUpdate(a, p);
+		characters[a] = [];
+		for( var c in xml_inventory[a]){
+				characters[a].push(c);
+		}
+		xml_inventorys = Object.assign(xml_inventorys, xml_inventory);
+				  
+		
+		
+	}
 	
 }
 
 function accountUpdate(u, p)
 {
-	return new Promise(resolve => {
+	return new Promise(function (resolve, reject){
 			
+		var xml_inventory = {};
 		var status = "";
 		var loading = 0;
 		
@@ -301,11 +362,11 @@ function accountUpdate(u, p)
 				{
 					console.log("Could not log in to account " + u + " - Did credentials change? Did starsonata.com break?");
 					status += "No character data found (Some causes: Invalid credentials, failed login, server issues)\n";
-					resolve(status);
+					reject(Error(status));
 				}
 				else
 				{
-					inventory[u] = {};
+					xml_inventory[u] = {};
 					for(i=0;i < characters.length;i++)
 					{
 						options.url = xmlLinks[i];
@@ -328,11 +389,11 @@ function accountUpdate(u, p)
 								}	
 								else
 								{			
-									inventory[u][res.request.characterName] = result;
+									xml_inventory[u][res.request.characterName] = result;
 									console.log("Added inventory to " + u + ":" + res.request.characterName);
 								}							
 								loading--;
-								if(loading === 0) resolve(status);
+								if(loading === 0) resolve(xml_inventory);
 							});
 						});
 					}							
@@ -374,5 +435,7 @@ app.whenReady().then(() => {
   
 	app.on('activate', function () {
 	  if (BrowserWindow.getAllWindows().length === 0) createWindow()
+	  saved_data = getSavedData(saved_data_path);
 	})
+
   })
