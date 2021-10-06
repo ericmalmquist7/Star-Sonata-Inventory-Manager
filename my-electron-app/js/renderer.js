@@ -1,24 +1,21 @@
 //Library Imports
-var remote = require('electron');
-const {ipcRenderer} = remote;
-
-const util = require('util');
-const request = require('request');
-const cheerio = require('cheerio');
-const xml2js = require('xml2js');
-const { html } = require('cheerio/lib/api/manipulation');
+const {ipcRenderer} = require('electron');;
 
 const searchQueryResultsBtn = document.querySelector('#searchQueryResults');
 const addAccountBtn = document.querySelector('#add_account');
 const refreshInvBtn = document.querySelector('#refresh_inv');
-const accountSelectionContainer = document.querySelector('#accountSelection');
+const loadingCircle = document.querySelector('#loadingCircle');
+const loadingInfo = document.querySelector('#loadingInfo');
+const darkModeBtn = document.querySelector('#darkMode');
 
 const form = document.querySelector('form');
 const tbody = document.querySelector('tbody');
-	
-inventory = {};
 
-var lastUpdate = 0;
+	
+var refreshStart = 0;
+
+const setTheme = theme => document.documentElement.className = theme;
+setTheme("dark");
 
 function removeEmptyStrings(s_array){
 	var temp = [];
@@ -57,20 +54,37 @@ function onSearchQuery(e){
 	const search_exact = document.getElementById('search_exact').value;
 	const search_exclude = document.getElementById('search_exclude').value;
 
+	let accountFilter = [];
+	let characterFilter = [];
+	
+	const accounts = document.querySelectorAll('.accountContainer');
+	for(let i=0; i < accounts.length; i++){
+		let accountActive = accounts[i].querySelector('.account input').checked;
+		if(!accountActive){
+			accountFilter.push(accounts[i].querySelector('.account label').textContent.trim());
+		}
+
+		let characters = accounts[i].querySelectorAll('.character label');
+		for(let j=0; j < characters.length; j++){
+			let characterActive = characters[j].querySelector('input').checked;
+			console.log(characterActive)
+			if(!characterActive){
+				characterFilter.push(characters[j].textContent.trim());
+			}
+		}
+	}
+
 	var args = {};
 	args.search_any = removeEmptyStrings(search_any.trim().toLowerCase().split(' '));
 	args.search_exact = search_exact.trim().toLowerCase();
 	args.search_exclude = removeEmptyStrings(search_exclude.trim().toLowerCase().split(' '));
-
+	args.characterFilter = characterFilter;
+	args.accountFilter = accountFilter;
 	ipcRenderer.send("select_data", args)
 }
 
 function onAddAccount(e){
-	var args = {};
-	args.un = "Longcat7777";
-	args.pw = "I dont know!!!"
-	ipcRenderer.send('add_account', args);
-
+	ipcRenderer.send('add_account');
 }
 
 function onRemoveAccount(e){
@@ -80,13 +94,48 @@ function onRemoveAccount(e){
 }
 
 function onRefreshInventory(){
+	refreshStart = Date.now();
+	setLoadingCircle(true);
 	ipcRenderer.send("refresh");
+}
+
+function onToggleDarkMode(e){
+	if(document.documentElement.className == "dark"){
+		setTheme("light");
+		e.target.innerHTML = "Light"
+	}
+	else if(document.documentElement.className == "light"){
+		setTheme("dark");
+		e.target.innerHTML = "Dark"
+	}
+
+}
+
+function setLoadingCircle(active, timeTaken, lastUpdate){
+	if(active){
+		loadingCircle.style.display = "inline"
+		loadingInfo.style.display = "none"
+	}
+	else{
+		loadingCircle.style.display = "none"
+		loadingInfo.style.display = "inline"
+		loadingInfo.innerHTML = `<h4>Updated at ${lastUpdate} <br> (${timeTaken} ms)</h4>`
+	}
 }
 
 
 ipcRenderer.on('refresh_reply', (event, new_inventory) => {
-  console.log(new_inventory); // prints inventory
-  ipcRenderer.send('show_accounts');
+
+	ipcRenderer.send('show_accounts');
+
+	let lastUpdate = new Date(Date.now());
+	let timeTaken = lastUpdate - refreshStart;
+
+	let hours = `${lastUpdate.getHours()}`.padStart(2, '0');
+	let minutes = `${lastUpdate.getMinutes()}`.padStart(2, '0');
+
+	lastUpdate = [hours,minutes].join(':')
+	setLoadingCircle(false, timeTaken, lastUpdate);
 })
 
 ipcRenderer.on('select_data_reply', (event, selected_data) => {
@@ -106,6 +155,7 @@ ipcRenderer.on('show_accounts_reply', (event, args) =>{
 	accountSelection.innerHTML = '';
 	console.log(args.accounts)
 	for(var a in args.accounts){
+		var account = args.accounts[a].name
 		var accountContainer = document.createElement("div");
 		accountContainer.className="accountContainer";
 
@@ -113,33 +163,46 @@ ipcRenderer.on('show_accounts_reply', (event, args) =>{
 
 		var newHtml = '';
 		newHtml += `<div class ="account">
-						<input type="radio">
-						<h4>${a}</h4>
+						
+						<label>
+						<input type="checkbox" name="account" value="${account}" checked="true"">
+						${account}
+						</label>
 					</div>
-
 					<hr>`
-		if(args.accounts[a].length === 0){
+		
+		if(args.accounts[a].error !== null){
 			var newChar = `<div class = "character">
-			<h4>Account not loaded</h4>
-			</div>`
+								<label>Login Error</label>
+							</div>`
+			newHtml += newChar;
+			console.error(args.accounts[a].error)
+		}
+		else if(args.accounts[a].loaded === false){
+			var newChar = `<div class = "character">
+								<label>Account not loaded</label>
+							</div>`
 			newHtml += newChar;
 		}
 		else{
-			for(var c in args.accounts[a]){
-				var charName = args.accounts[a][c]
-				var newChar = `<div class = "character">
-				<input type="radio">
-				<h4 class="characterName">${charName}</h4>
-				</div>`
+			for(var c in args.accounts[a].characterArray){
+				var charName = args.accounts[a].characterArray[c]
+				var newChar = `<div class="character">
+									
+									<label>
+									<input type="checkbox" name="character" value="${charName}" checked="true">
+									${charName}
+									</label>
+								</div>`
 				newHtml += newChar;
 			}
 		}
 
-		accountContainer.innerHTML += newHtml;
+		accountContainer.innerHTML = newHtml;
 			
 		var btn = document.createElement("button");
 		btn.className = "remove_account";
-		btn.value = a;
+		btn.value = account;
 		btn.innerHTML = "Remove";
 		btn.addEventListener('click', onRemoveAccount)
 		accountContainer.append(btn)
@@ -171,3 +234,4 @@ refreshInvBtn.addEventListener('click', onRefreshInventory);
 form.addEventListener('submit', onSearchQuery);
 addAccountBtn.addEventListener('click', onAddAccount);
 ipcRenderer.send('show_accounts');
+darkModeBtn.addEventListener('click', onToggleDarkMode)

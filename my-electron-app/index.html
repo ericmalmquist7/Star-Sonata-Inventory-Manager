@@ -1,6 +1,6 @@
 <!doctype html>
 
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -22,7 +22,12 @@
 <body>
 	<div id=box>
 		<div id=header>
-			<h1> Star Sonata Inventory Manager</h1>
+			<div class="darkModeContainer">
+				<h1> Star Sonata Inventory Manager</h1>
+				<button id="darkMode">
+					Dark
+				</button>
+			  </div>
 			<div id="topContainer">
 		
 				<div id="searchQuery">
@@ -41,81 +46,18 @@
 							<input type="text" id="search_exclude"/>
 						</div>
 						<br>
-						<button>Search</button>
+						<button id="submitButton">Search</button>
 					</form>
 				</div>
 		
 
-				<div id="accountSelection">
-
-					<div class="accountContainer">
-						<div class ="account">
-							<input type="radio">
-							<h4>Longcat77</h4>
-						</div>
-
-						<hr>
-
-						<div class = "character">
-							<input type="radio">
-							<h4>longcat</h4>
-						</div>
-						<div class = "character">
-							<input type="radio">
-							<h4>tacgnol</h4>
-						</div>
-						<div class = "character">
-							<input type="radio">
-							<h4>shortcat</h4>
-						</div>
-						<div class = "character">
-							<input type="radio">
-							<h4>fatcat</h4>
-						</div>
-						<div class = "character">
-							<input type="radio">
-							<h4>widecat</h4>
-						</div>
-						<button id="remove_account">Remove</button>
-					
-					</div>
-					<div class="accountContainer">
-						<div class ="account">
-							<input type="radio">
-							<h4>Longcat77</h4>
-						</div>
-
-						<hr>
-
-						<div class = "character">
-							<input type="radio">
-							<h4>longcat</h4>
-						</div>
-						<div class = "character">
-							<input type="radio">
-							<h4>tacgnol</h4>
-						</div>
-						<div class = "character">
-							<input type="radio">
-							<h4>shortcat</h4>
-						</div>
-						<div class = "character">
-							<input type="radio">
-							<h4>fatcat</h4>
-						</div>
-						<div class = "character">
-							<input type="radio">
-							<h4>widecat</h4>
-						</div>
-						<button id="remove_account">Remove</button>
-					</div>
-					
-					
-				</div>
+				<div id="accountSelection"></div>
 				
 				<div class="accountModify">
 					<button id="add_account">Add<br>Account</button>
 					<button id="refresh_inv">Refresh<br>Inventory</button>
+					<div id="loadingCircle"></div>
+					<div id="loadingInfo"><h4>Time Taken: 200ms</h4></div>
 				</div>
 		
 			</div>
