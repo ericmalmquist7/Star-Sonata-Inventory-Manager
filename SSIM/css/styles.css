@@ -165,7 +165,6 @@ button{
 	font-weight: bold;
 }
 
-
 #loadingCircle {
 	border: 8px solid var(--darker_base) ;
 	border-top: 8px solid var(--base); 
@@ -238,6 +237,10 @@ tr:nth-child(odd) {
 	flex: 0 1 40px;
 	text-align: center;
 	background-color: var(--black);
+}
+
+#github{
+	width: 150px;
 }
 
 

@@ -1,11 +1,9 @@
 const { ipcMain, app, BrowserWindow } = require('electron')
 
-const util = require('util');
 var request = require('request');
 const cheerio = require('cheerio');
 const xml2js = require('xml2js');
 const fs = require('fs');
-const { xml } = require('cheerio/lib/static');
 
 var saved_data_path = app.getPath("appData") + "/SSIM/data.json";
 var saved_data = {};
@@ -530,6 +528,10 @@ var win;
 
 app.whenReady().then(() => {
 	win = createWindow('index.html');
+	win.webContents.on('new-window', function(e, url) {
+		e.preventDefault();
+		require('electron').shell.openExternal(url);
+	});
 	
 	app.on('window-all-closed', function () {
 	  if (process.platform !== 'darwin') app.quit()

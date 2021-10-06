@@ -7,10 +7,12 @@ const refreshInvBtn = document.querySelector('#refresh_inv');
 const loadingCircle = document.querySelector('#loadingCircle');
 const loadingInfo = document.querySelector('#loadingInfo');
 const darkModeBtn = document.querySelector('#darkMode');
+const githubBtn = document.querySelector('#github');
 
 const form = document.querySelector('form');
 const tbody = document.querySelector('tbody');
 
+var show_limit = 250;
 	
 var refreshStart = 0;
 
@@ -67,7 +69,6 @@ function onSearchQuery(e){
 		let characters = accounts[i].querySelectorAll('.character label');
 		for(let j=0; j < characters.length; j++){
 			let characterActive = characters[j].querySelector('input').checked;
-			console.log(characterActive)
 			if(!characterActive){
 				characterFilter.push(characters[j].textContent.trim());
 			}
@@ -111,6 +112,10 @@ function onToggleDarkMode(e){
 
 }
 
+function onGithubLink(e) {
+	require('electron').shell.openExternal("https://github.com/ericmalmquist7/Star-Sonata-Inventory-Manager");
+}
+
 function setLoadingCircle(active, timeTaken, lastUpdate){
 	if(active){
 		loadingCircle.style.display = "inline"
@@ -140,7 +145,6 @@ ipcRenderer.on('refresh_reply', (event, new_inventory) => {
 
 ipcRenderer.on('select_data_reply', (event, selected_data) => {
   console.log(selected_data) // prints inventory
-  var show_limit = 500;
   for(var i in selected_data){
 	  if (i > show_limit) break;
 	  addRow(selected_data[i]);
@@ -234,4 +238,81 @@ refreshInvBtn.addEventListener('click', onRefreshInventory);
 form.addEventListener('submit', onSearchQuery);
 addAccountBtn.addEventListener('click', onAddAccount);
 ipcRenderer.send('show_accounts');
-darkModeBtn.addEventListener('click', onToggleDarkMode)
+darkModeBtn.addEventListener('click', onToggleDarkMode);
+githubBtn.addEventListener('click', onGithubLink)
+
+function sortTable(n) {
+	console.log("Sorting");
+	var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+	table = document.querySelector("table");
+	switching = true;
+	// Set the sorting direction to ascending:
+	dir = "asc";
+	/* Make a loop that will continue until
+	no switching has been done: */
+	while (switching) {
+	  // Start by saying: no switching is done:
+	  switching = false;
+	  rows = table.rows;
+	  /* Loop through all table rows (except the
+	  first, which contains table headers): */
+	  for (i = 1; i < (rows.length - 1); i++) {
+		// Start by saying there should be no switching:
+		shouldSwitch = false;
+		/* Get the two elements you want to compare,
+		one from current row and one from the next: */
+		x = rows[i].getElementsByTagName("TD")[n];
+		y = rows[i + 1].getElementsByTagName("TD")[n];
+		/* Check if the two rows should switch place,
+		based on the direction, asc or desc: */
+		
+		if(n === 1){
+			if (dir == "asc") {
+				if (parseInt(x.innerHTML) > parseInt(y.innerHTML)) {
+				  // If so, mark as a switch and break the loop:
+				  shouldSwitch = true;
+				  break;
+				}
+			  } else if (dir == "desc") {
+				if (parseInt(x.innerHTML) < parseInt(y.innerHTML)) {
+				  // If so, mark as a switch and break the loop:
+				  shouldSwitch = true;
+				  break;
+				}
+			  }
+		}
+		else{
+			if (dir == "asc") {
+				if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+				  // If so, mark as a switch and break the loop:
+				  shouldSwitch = true;
+				  break;
+				}
+			  } else if (dir == "desc") {
+				if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+				  // If so, mark as a switch and break the loop:
+				  shouldSwitch = true;
+				  break;
+				}
+			  }
+		}
+		
+	  }
+	  if (shouldSwitch) {
+		/* If a switch has been marked, make the switch
+		and mark that a switch has been done: */
+		rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+		switching = true;
+		// Each time a switch is done, increase this count by 1:
+		switchcount ++;
+	  } else {
+		/* If no switching has been done AND the direction is "asc",
+		set the direction to "desc" and run the while loop again. */
+		if (switchcount == 0 && dir == "asc") {
+		  dir = "desc";
+		  switching = true;
+		}
+	  }
+	}
+	console.log("Sorting done");
+  }

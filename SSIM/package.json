@@ -1,7 +1,7 @@
 {
-  "name": "my-electron-app",
+  "name": "Star Sonata Inventory Manager",
   "version": "1.0.0",
-  "description": "Star Sonata Inventory Manager",
+  "description": "A place to search multiple inventories in Star Sonata.",
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
