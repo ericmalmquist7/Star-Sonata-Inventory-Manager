@@ -1,5 +1,5 @@
 {
-  "name": "Star Sonata Inventory Manager",
+  "name": "SSIM",
   "version": "1.0.0",
   "description": "A place to search multiple inventories in Star Sonata.",
   "main": "main.js",
@@ -10,6 +10,7 @@
   "author": "Eric Malmquist",
   "license": "ISC",
   "devDependencies": {
+    "@electron-forge/cli": "^6.0.0-beta.61",
     "electron": "^15.0.0"
   },
   "configurations": [
@@ -22,8 +23,10 @@
       "windows": {
         "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
       },
-      "args" : ["."],
+      "args": [
+        "."
+      ],
       "outputCapture": "std"
     }
-	]
+  ]
 }
