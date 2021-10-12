@@ -4,52 +4,54 @@ var request = require('request');
 const cheerio = require('cheerio');
 const xml2js = require('xml2js');
 const fs = require('fs');
+const CryptoJS = require('crypto-js');
 
-var saved_data_path = app.getPath("appData") + "/SSIM/data.json";
-var saved_data = {};
+var win; //Window reference to switch active html file
 
-var data = [];
+var saved_data_path = `${__dirname}/data.json`;
 
-var parser = new xml2js.Parser();
+var data = []; //Global storage of parsed data points (So we don't have to pull XML data on every request)
 
-var accountInfo = [];
 class AccountInfo{
-	constructor (name, characterArray, loaded, error){
-		this.name = name;
+	constructor (un, pw, characterArray, loaded, error){
+		this.un = un;
+		this.pw = pw;
 		this.characterArray = characterArray;
 		this.loaded = loaded; //true false
 		this.error = error; //if no errors, error is null
 	}
 }
 
-
 //INTERPROCESS COMMUNICATION
 ipcMain.on('refresh', async (event) => {
-  var xml_inventory = await updateInv(getSavedData(saved_data_path, true));
+  let xml_inventory = await updateInv(getSavedData());
   data = parseData(xml_inventory);
   event.reply('refresh_reply', data);
 })
 
 ipcMain.on('select_data', (event, args) => {
-	var selectedData = selectData(args);
+	let selectedData = selectData(args);
 	event.reply('select_data_reply', selectedData);
 })
 
 ipcMain.on('show_accounts', (event) => {
-	var response = {};	
-	response.accounts = accountInfo;
+	let response = {};	
+	let saved_data = getSavedData();
+	response.accounts = saved_data.accounts;
 	event.reply('show_accounts_reply', response);
 	
 })
 
 ipcMain.on('remove_account', (event, args) => {
-	var name = args.name;
+	let name = args.name;
+
+	args = {};
 	args.success = false;
 
-	saved_data = getSavedData(saved_data_path, true);
+	let saved_data = getSavedData();
 
-	var index = -1;
-	for(var i in saved_data.accounts){
+	let index = -1;
+	for(let i in saved_data.accounts){
 		if(saved_data.accounts[i].un === name){
 			index = i;
 			break;
@@ -61,21 +63,14 @@ ipcMain.on('remove_account', (event, args) => {
 	}
 	else{
 		saved_data.accounts.splice(index, 1)
-		args.success = updateSavedData(saved_data_path, saved_data);
-		for(var i in accountInfo){
-			if (accountInfo[i].name == name){
-				accountInfo.splice(i, 1);
-				break;
-			}
-		}
+		args.success = updateSavedData(saved_data);
 	}
 
 	event.reply('remove_account_reply', args);
 })
 
-ipcMain.on('add_account', (event, args) => {
-	let fileName = "accountWindow";
-	win.loadURL(`file://${__dirname}/` + fileName + `.html`);
+ipcMain.on('add_account', (event) => {
+	win.loadURL(`file://${__dirname}/accountWindow.html`);
 })
 
 ipcMain.on('new_account', async (event, args) => {
@@ -96,22 +91,21 @@ ipcMain.on('new_account', async (event, args) => {
 		return;
 	}
 
-	//TODO add encrpytion
-	saved_data = getSavedData(saved_data_path, true);
+	_pw = CryptoJS.AES.encrypt(_pw, "https://www.youtube.com/watch?v=dQw4w9WgXcQ").toString();
+	let saved_data = getSavedData();
 	
 	let found = false;
 	for (let i in saved_data.accounts){
 		if(saved_data.accounts[i].un === _un){
 			found = true;
-			saved_data.accounts[i] = {un:_un, pw:_pw};
+			saved_data.accounts[i] = new AccountInfo(_un, _pw, [], false, null);
 		}
 	}
+
 	if(!found) {
-		saved_data.accounts.push({un:_un, pw:_pw});
-		let newAccountInfo = new AccountInfo(_un, [], false, null);
-		accountInfo.push(newAccountInfo);
+		saved_data.accounts.push(new AccountInfo(_un, _pw, [], false, null));
 	}
-	let saveSuccess = updateSavedData(saved_data_path, saved_data)
+	let saveSuccess = updateSavedData(saved_data)
 
 
 	args = {}
@@ -162,13 +156,13 @@ function selectData(args){
 		characterFilter.includes(data[i].character)){
 			continue;
 		}
-		var item_str = data[i].item.toLowerCase();
+		let item_str = data[i].item.toLowerCase();
 
-		for(var j in search_any){
+		for(let j in search_any){
 			if (item_str.includes(search_any[j])){
 				//Found item, now we need to check for exclude fields
-				var isExcluded = false;
-				for(var e in search_exclude){
+				let isExcluded = false;
+				for(let e in search_exclude){
 					if(item_str.includes(search_exclude[e])){
 						isExcluded = true;
 						break;
@@ -196,21 +190,19 @@ function selectData(args){
 
 function parseData(xml_inventory){
 
-	var dataPoints = [];
+	let dataPoints = [];
 
-	for(var account in xml_inventory){
-		for(var character in xml_inventory[account]){
-			for(var ship in xml_inventory[account][character].inventory.DOCKEDSHIP){
-				var _ship = xml_inventory[account][character].inventory.DOCKEDSHIP[ship].SHIP[0];
+	for(let account in xml_inventory){
+		for(let character in xml_inventory[account]){
+			for(let ship in xml_inventory[account][character].inventory.DOCKEDSHIP){
+				let _ship = xml_inventory[account][character].inventory.DOCKEDSHIP[ship].SHIP[0];
 
-				var new_datapoints = parseShipData(account, character, _ship, true);
-				dataPoints = dataPoints.concat(new_datapoints);
+				dataPoints = dataPoints.concat(parseShipData(account, character, _ship, true))
 			}
-			for(var ship in xml_inventory[account][character].inventory.SHIP){
-				var _ship = xml_inventory[account][character].inventory.SHIP[ship];
+			for(let ship in xml_inventory[account][character].inventory.SHIP){
+				let _ship = xml_inventory[account][character].inventory.SHIP[ship];
 				
-				var new_datapoints = parseShipData(account, character, _ship, false);
-				dataPoints = dataPoints.concat(new_datapoints);
+				dataPoints = dataPoints.concat(parseShipData(account, character, _ship, false));
 			}
 		}
 	}
@@ -218,47 +210,42 @@ function parseData(xml_inventory){
 }
 
 function parseShipData(account, character, _ship, isDocked){
-	var dataPoints = [];
+	let dataPoints = [];
 
-	var ship_name = _ship.HULL[0]._;
+	let ship_name = _ship.HULL[0]._;
 
-	if(hasProp(_ship, 'SHIP_ALIAS')){
-		var ship_alias = _ship.SHIP_ALIAS[0];
-	}
-	else{
-		var ship_alias = "";
-	}
+	let ship_alias = ""
+	if(hasProp(_ship, 'SHIP_ALIAS')) ship_alias = _ship.SHIP_ALIAS[0];
+	
 
 	if(hasProp(_ship, 'ITEM')){
 		
-		for(var item in _ship.ITEM){
-			var _item = _ship.ITEM[item];
+		for(let item in _ship.ITEM){
+			let _item = _ship.ITEM[item];
 
-			var item_name = _item.$.nm;
-			if(hasProp(_item.$, 'quant')) 
-				var quantity = parseInt(_item.$.quant);
-			else var quantity = 1;
+			let item_name = _item.$.nm;
+			let quantity = 1;
+			if(hasProp(_item.$, 'quant')) quantity = parseInt(_item.$.quant);
 
-			var isEquipped = _item.$.eqp;
+			let isEquipped = _item.$.eqp;
 			isEquipped = !!parseInt(isEquipped);
 			
-			var DP = new DataPoint(account, character, ship_name, ship_alias, item_name, quantity, isDocked, isEquipped)
+			let DP = new DataPoint(account, character, ship_name, ship_alias, item_name, quantity, isDocked, isEquipped)
 			dataPoints.push(DP);
 		}
 	}
 	else if(hasProp(_ship, 'ITEMLIST')){
-		for(var item in _ship.ITEMLIST[0].ITEM){
-			var _item = _ship.ITEMLIST[0].ITEM[item];
+		for(let item in _ship.ITEMLIST[0].ITEM){
+			let _item = _ship.ITEMLIST[0].ITEM[item];
 
-			var item_name = _item.$.nm;
-			if(hasProp(_item.$, 'quant')) 
-				var quantity = parseInt(_item.$.quant);
-			else var quantity = 1;
+			let item_name = _item.$.nm;
+			let quantity = 1;
+			if(hasProp(_item.$, 'quant')) quantity = parseInt(_item.$.quant);
 
-			var isEquipped = _item.$.eqp;
+			let isEquipped = _item.$.eqp;
 			isEquipped = !!parseInt(isEquipped);
 			
-			var DP = new DataPoint(account, character, ship_name, ship_alias, item_name, quantity, isDocked, isEquipped)
+			let DP = new DataPoint(account, character, ship_name, ship_alias, item_name, quantity, isDocked, isEquipped)
 			dataPoints.push(DP);
 		}
 	}
@@ -271,46 +258,55 @@ function parseShipData(account, character, _ship, isDocked){
 
 
 //Local data Processing
-function setAccountData(){
-	if(isEmpty(saved_data)){
-		saved_data = getSavedData(saved_data_path);
-	}
-
-	accountInfo = [];
-	for(var i in saved_data.accounts)
-	{
-		var a = new AccountInfo(saved_data.accounts[i].un, [], false, null);
-		accountInfo.push(a);
-	}
-}
-
-function getSavedData(data_path, includePw){
+function getSavedData(){
 	console.log("Retrieving saved data");
-	var read_data;
+
+	let data_path = saved_data_path;
+	let read_data;
 	try {
 		read_data = fs.readFileSync(data_path);
 	  } catch (err) {
 		if (err.code == 'ENOENT'){
-			console.error("Could not find account file at " + data_path);
+			console.error("Could not find account file at " + data_path + ". Attempting to create file.");
+			let saved_data = {};
+			saved_data.accounts = [];
+			if(updateSavedData(data_path, saved_data)){
+				return saved_data;
+			}
+			else{
+				return null;
+			}
 		}
 		else console.error("Error reading file:\n" + err);
 		return null;
 	  }
+	
+
+	let saved_data = {}
+	try{
+		saved_data = JSON.parse(read_data);
+	} catch (e){
+		console.log("Error parsing JSON: Reformatting file.")
+		let saved_data = {};
+		saved_data.accounts = [];
+		if(updateSavedData(data_path, saved_data)){
+			return saved_data;
+		}
+		else{
+			return null;
+		}
+	}	
 		
-	var saved_data = JSON.parse(read_data);
-	if(includePw === "undefined" || !includePw){
-		for(var a in saved_data.accounts){
-			saved_data.accounts[a].pw = "";
-		} 
-	}
 	console.log("Done");
 	return saved_data;
 }
 
-function updateSavedData(data_path, newData){
+function updateSavedData(newData){
 	console.log("Saving data");
+
+	let data_path = saved_data_path;
 	try {
-		var data_str = JSON.stringify(newData);
+		let data_str = JSON.stringify(newData);
 		fs.writeFileSync(data_path, data_str);
 	  } catch (err) {
 		if (err.code == 'ENOENT'){
@@ -329,49 +325,51 @@ async function updateInv(saved_data){
 	console.log("Updating inventory");
 	console.log("Updating " + saved_data.accounts.length + " accounts");
 			
-	var xml_inventorys = {};
-	accountInfo = [];
+	let xml_inventorys = {};
 
-	for(var i in saved_data.accounts)
+	for(let i=0; i < saved_data.accounts.length; i++)
 	{
-		
-	}
-	for(k=0; k < saved_data.accounts.length; k++)
-	{
-		var a = saved_data.accounts[k].un;
-		var p = saved_data.accounts[k].pw;
+		let a = saved_data.accounts[i].un;
+		let p = saved_data.accounts[i].pw;
+		let decryptP = CryptoJS.AES.decrypt(p, "https://www.youtube.com/watch?v=dQw4w9WgXcQ").toString(CryptoJS.enc.Utf8);
+
+		if(p === ""){
+			console.log("Password field left blank!");
+			continue;
+		}
 
 		//TODO Add encryption
 		try{
 			//TODO: Login and pull accounts simultaneously (Promise.all). Currently, that will cause an error, maybe cookies 
-			var xml_inventory = await accountUpdate(a, p);
-			var characters = []
-			for( var c in xml_inventory[a]){
-					characters.push(c);
+			let xml_inventory = await accountUpdate(a, decryptP);
+			let characters = []
+			for( let c in xml_inventory[a]){
+				characters.push(c);
 			}
 			//update global accountInfo
-			var newAccountInfo = new AccountInfo(a, characters, true, null);
-			accountInfo.push(newAccountInfo);
+			saved_data.accounts[i] = new AccountInfo(a, p, characters, true, null);
 
 			xml_inventorys = Object.assign(xml_inventorys, xml_inventory);
 		}
 		catch (e){
 			console.error("Error loading account " + a + " : " + e);
 			//update global accountInfo
-			var newAccountInfo = new AccountInfo(a, [], false, e);
-			accountInfo.push(newAccountInfo);
+			saved_data.accounts[i] = new AccountInfo(a, p, [], false, e);
 		}
 		
 	}
+	//Write updated information to disk
+	updateSavedData(saved_data);
 	return xml_inventorys;		  
 }
 
 function testLogin(u, p){
+	console.log("Testing login...");
 	return new Promise(function (resolve, reject){
-		var j = request.jar();
+		let j = request.jar();
 		request = request.defaults({jar:j});
 			
-		var options = {
+		let options = {
 			url: 'https://www.starsonata.com/user/login',
 			formData: {'username':u, 'password':p, 'stay_logged_in':'on'},
 			jar:j,
@@ -392,16 +390,21 @@ function testLogin(u, p){
 
 function accountUpdate(u, p)
 {
+	if(u === "undefined" || p === "undefined"){
+		return Promise.reject("Error: username or password undefinied.");
+	}
 	return new Promise(function (resolve, reject){
 			
-		var xml_inventory = {};
-		var status = "";
-		var loading = 0;
+		let parser = new xml2js.Parser();
+
+		let xml_inventory = {};
+		let status = "";
+		let loading = 0;
 		
-		var j = request.jar();
+		let j = request.jar();
 		request = request.defaults({jar:j});
 			
-		var options = {
+		let options = {
 			url: 'https://www.starsonata.com/user/login',
 			formData: {'username':u, 'password':p, 'stay_logged_in':'on'},
 			jar:j,
@@ -429,10 +432,10 @@ function accountUpdate(u, p)
 				if(res.statusCode === 500)
 					status += "Internal Server Error (500)\n";
 			
-				var $ = cheerio.load(body);
-				var table = $('.medium');
-				var names = [];
-				var links = [];
+				let $ = cheerio.load(body);
+				let table = $('.medium');
+				let names = [];
+				let links = [];
 				
 				for(i=0;i < 5;i++)
 				{
@@ -441,8 +444,8 @@ function accountUpdate(u, p)
 					links.push($('table tr:nth-child('+(i+2)+') td:nth-child(17) a:nth-child(2)').attr('href'));
 				}
 				
-				var characters = [];
-				var xmlLinks = [];
+				let characters = [];
+				let xmlLinks = [];
 				for(i=0;i < names.length;i++)
 				{
 					if(names[i] !== "")
@@ -524,9 +527,15 @@ function createWindow (fileName) {
 	return win;
 }
 
-var win;
 
 app.whenReady().then(() => {
+
+	let saved_data = getSavedData();
+	for(let i=0; i < saved_data.accounts.length; i++){
+		saved_data.accounts[i].loaded = false;
+	}
+	updateSavedData(saved_data);
+
 	win = createWindow('index.html');
 	win.webContents.on('new-window', function(e, url) {
 		e.preventDefault();
@@ -535,15 +544,10 @@ app.whenReady().then(() => {
 	
 	app.on('window-all-closed', function () {
 	  if (process.platform !== 'darwin') app.quit()
-    })
+    });
   
 	app.on('activate', function () {
-	  if (BrowserWindow.getAllWindows().length === 0) win = createWindow();
-	  saved_data = getSavedData(saved_data_path);
-	})
-
-	
-
-	setAccountData();
+		if (BrowserWindow.getAllWindows().length === 0) win = createWindow();
+	});
 
   })

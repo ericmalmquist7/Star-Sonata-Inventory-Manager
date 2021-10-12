@@ -159,7 +159,7 @@ ipcRenderer.on('show_accounts_reply', (event, args) =>{
 	accountSelection.innerHTML = '';
 	console.log(args.accounts)
 	for(var a in args.accounts){
-		var account = args.accounts[a].name
+		var account = args.accounts[a].un
 		var accountContainer = document.createElement("div");
 		accountContainer.className="accountContainer";
 
