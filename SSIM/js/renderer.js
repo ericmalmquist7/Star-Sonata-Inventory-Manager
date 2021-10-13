@@ -5,8 +5,8 @@ const searchQueryResultsBtn = document.querySelector('#searchQueryResults')
 const accountSelection = document.querySelector('#accountSelection')
 const addAccountBtn = document.querySelector('#add_account')
 const refreshInvBtn = document.querySelector('#refresh_inv')
-const loadingCircle = document.querySelector('#loadingCircle')
-const loadingInfo = document.querySelector('#loadingInfo')
+const loadingCircle = document.querySelector('.loadingCircle')
+const loadingInfo = document.querySelector('.loadingInfo')
 const darkModeBtn = document.querySelector('#darkMode')
 const githubBtn = document.querySelector('#github')
 
@@ -60,6 +60,11 @@ function onSearchQuery (e) {
     const characterFilter = []
 
     const accounts = document.querySelectorAll('.accountContainer')
+    if (accounts.length === 0) {
+        alert('No accounts to refresh. Add one with "Add Account".')
+    } else if (refreshStart === 0) {
+        alert('Account data not loaded. Load with "Refresh Inventory".')
+    }
     for (let i = 0; i < accounts.length; i++) {
         const accountActive = accounts[i].querySelector('.account input').checked
         if (!accountActive) {
@@ -125,8 +130,8 @@ function setLoadingCircle (active, timeTaken, lastUpdate) {
     }
 }
 
-ipcRenderer.on('refresh_reply', (event, newInventory) => {
-    console.log(newInventory)
+ipcRenderer.on('refresh_reply', (event, args) => {
+    console.log('Inventory: ' + args.newInventory)
     ipcRenderer.send('show_accounts')
 
     let lastUpdate = new Date(Date.now())
@@ -137,6 +142,11 @@ ipcRenderer.on('refresh_reply', (event, newInventory) => {
 
     lastUpdate = [hours, minutes].join(':')
     setLoadingCircle(false, timeTaken, lastUpdate)
+
+    if (args.accounts.length === 0) {
+        alert('No accounts to refresh. Add one with "Add Account".')
+        // alert('Can\'t search an empty inventory: Try refreshing with "Refresh Inventory"')
+    }
 })
 
 ipcRenderer.on('select_data_reply', (event, selectedData) => {
@@ -175,7 +185,7 @@ ipcRenderer.on('show_accounts_reply', (event, args) => {
 
         if (args.accounts[a].error !== null) {
             const newChar = `<div class = "character">
-								<label>Login Error</label>
+								<label>${args.accounts[a].error}</label>
 							</div>`
             newHtml += newChar
             console.error(args.accounts[a].error)

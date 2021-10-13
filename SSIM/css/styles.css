@@ -42,11 +42,6 @@ h2, h3, h4, label, th, td {
 	color: var(--white);
 }
 
-
-.error{
-	color: red;
-}
-
 #header {
 	text-align: center;
 	background-color: var(--base);
@@ -160,12 +155,20 @@ button{
 	text-decoration: none;
 	display: inline-block;
 	font-size: 16px;
-	margin: 4px 2px;
+	margin: 4px 2px; 
 	cursor: pointer;
 	font-weight: bold;
 }
+.loadingDiv{
+    height: 60px;
+    width: 100%;
+	display: flex;
+	flex-flow: column;
+	justify-content: center;
+	align-items: center;
+}
 
-#loadingCircle {
+.loadingCircle {
 	border: 8px solid var(--darker_base) ;
 	border-top: 8px solid var(--base); 
 	border-radius: 50%;
@@ -180,7 +183,7 @@ button{
 	100% { transform: rotate(360deg); }
   }
 
-#loadingInfo{
+.loadingInfo{
 	display: none;
 }
 

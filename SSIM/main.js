@@ -10,7 +10,7 @@ let win // Window reference to switch active html file
 
 const savedDataPath = path.join(__dirname, 'data.json')
 
-let data = [] // Global storage of parsed data points (So we don't have to pull XML data on every request)
+const data = [] // Global storage of parsed data points (So we don't have to pull XML data on every request)
 
 class AccountInfo {
     constructor (un, pw, characterArray, loaded, error) {
@@ -24,9 +24,13 @@ class AccountInfo {
 
 // Interprocess Communication
 ipcMain.on('refresh', async (event) => {
-    const xmlInventory = await updateInv(getSavedData())
-    data = parseData(xmlInventory)
-    event.reply('refresh_reply', data)
+    const savedData = getSavedData()
+    const xmlInventory = await updateInv(savedData)
+
+    const args = {}
+    args.data = parseData(xmlInventory)
+    args.accounts = savedData.accounts
+    event.reply('refresh_reply', args)
 })
 
 ipcMain.on('select_data', (event, args) => {
@@ -72,17 +76,21 @@ ipcMain.on('new_account', async (event, args) => {
     const _un = args.un
     let _pw = args.pw
 
-    let responseCode
-
     // Test if login credentials are OK
+    let responseCode
     try {
         responseCode = await testLogin(_un, _pw)
     } catch (e) {
         args = {}
         args.success = false
         args.name = _un
-        args.error = 'Failed to login. Error: ' + e
+        if (e.code === 'ETIMEDOUT') {
+            args.error = 'Login timeout. Is the server hamster alive? ' + e
+        } else {
+            args.error = 'Failed to login. Error: ' + e
+        }
         event.reply('new_account_reply', args)
+        return
     }
 
     if (!(responseCode === 302)) {
@@ -344,7 +352,11 @@ async function updateInv (savedData) {
         } catch (e) {
             console.error('Error loading account ' + a + ' : ' + e)
             // update global accountInfo
-            savedData.accounts[i] = new AccountInfo(a, p, [], false, e)
+            let error = e.message
+            if (e.code === 'ETIMEDOUT') {
+                error = 'Server timeout'
+            }
+            savedData.accounts[i] = new AccountInfo(a, p, [], false, error)
         }
     }
     // Write updated information to disk
@@ -374,10 +386,11 @@ function createWindow (fileName) {
 }
 
 app.whenReady().then(() => {
-    // Mark all accounts as unloaded on startup
+    // Mark all accounts as unloaded and clear errors on startup
     const savedData = getSavedData()
     for (let i = 0; i < savedData.accounts.length; i++) {
         savedData.accounts[i].loaded = false
+        savedData.accounts[i].error = null
     }
     updateSavedData(savedData)
 

@@ -24,10 +24,12 @@ function testLogin (u, p) {
             options,
             'https://www.starsonata.com/user/login/',
             function (err, res, body) {
-                console.log('POST login sent.. user:' + u + ', Response code: ' + res.statusCode)
                 if (err) {
-                    reject(new Error(err))
+                    reject(err)
+                    return
                 }
+                console.log(res)
+                console.log('POST login sent.. user:' + u + ', Response code: ' + res.statusCode)
                 resolve(res.statusCode)
             }
         )
@@ -66,7 +68,7 @@ function accountUpdate (u, p) {
             options,
             'https://www.starsonata.com/user/login/',
             function (err, res, body) {
-                if (err) reject(new Error(err))
+                if (err) { reject(err); return }
 
                 console.log('POST login... user:' + u + ', Response code: ' + res.statusCode)
 
@@ -81,11 +83,12 @@ function accountUpdate (u, p) {
                 }
 
                 request.get(options, function (err, res, body) {
-                    if (err) reject(new Error(err))
+                    if (err) { reject(err); return }
 
                     console.log('GET assets sent.. Response code: ' + res.statusCode)
                     if (res.statusCode === 500) {
                         reject(new Error('Internal Server Error (500)'))
+                        return
                     }
 
                     const $ = cheerio.load(body)
@@ -111,7 +114,8 @@ function accountUpdate (u, p) {
                     loading += characters.length
                     if (characters.length === 0) {
                         console.log('Could not log in to account ' + u + ' - Did credentials change? Did starsonata.com break?')
-                        reject(Error('No character data found (Some causes: Invalid credentials, failed login, server issues)'))
+                        reject(new Error('No character data found (Some causes: Invalid credentials, failed login, server issues)'))
+                        return
                     }
 
                     xmlInventory[u] = {}

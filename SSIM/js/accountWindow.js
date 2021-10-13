@@ -1,28 +1,39 @@
-const { ipcRenderer } = require("electron");
+const { ipcRenderer } = require('electron')
 
-const form = document.querySelector('form');
-const errorText = document.querySelector('.error');
-const backButton = document.querySelector('#goBack');
+const form = document.querySelector('form')
+const backButton = document.querySelector('#goBack')
+const loadingCircle = document.querySelector('.loadingCircle')
+const loadingInfo = document.querySelector('.loadingInfo')
 
-function onSubmit(e){
-	e.preventDefault();
-    let args = {}
-    args.un = document.getElementById('username').value;
-    args.pw = document.getElementById('password').value;
+function onSubmit (e) {
+    setLoadingCircle(true)
+    e.preventDefault()
+    const args = {}
+    args.un = document.getElementById('username').value
+    args.pw = document.getElementById('password').value
     ipcRenderer.send('new_account', args)
-
 }
 
-function onGoBack(e){
-    e.preventDefault();
-    ipcRenderer.send('return_home');
+function onGoBack (e) {
+    e.preventDefault()
+    ipcRenderer.send('return_home')
 }
 
 ipcRenderer.on('new_account_reply', (event, args) => {
-    let error = args.error;
-    console.log(error);
-    errorText.innerHTML = `${error}`;
-});
+    setLoadingCircle(false, args.error)
+    console.log(args.error)
+})
 
-form.addEventListener('submit', onSubmit);
-backButton.addEventListener('click', onGoBack);
+function setLoadingCircle (active, error) {
+    if (active) {
+        loadingCircle.style.display = 'inline'
+        loadingInfo.style.display = 'none'
+    } else {
+        loadingCircle.style.display = 'none'
+        loadingInfo.style.display = 'inline'
+        loadingInfo.innerHTML = `<h4>${error}></h4>`
+    }
+}
+
+form.addEventListener('submit', onSubmit)
+backButton.addEventListener('click', onGoBack)
