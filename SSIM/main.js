@@ -10,7 +10,7 @@ let win // Window reference to switch active html file
 
 const savedDataPath = path.join(__dirname, 'data.json')
 
-const data = [] // Global storage of parsed data points (So we don't have to pull XML data on every request)
+let data = [] // Global storage of parsed data points (So we don't have to pull XML data on every request)
 
 class AccountInfo {
     constructor (un, pw, characterArray, loaded, error) {
@@ -22,14 +22,29 @@ class AccountInfo {
     }
 }
 
+let lastUpdate = 0
+const updateLimit = 20000 // milliseconds
+
 // Interprocess Communication
 ipcMain.on('refresh', async (event) => {
+    const timeElapsed = Date.now() - lastUpdate
+    const timeRemaining = updateLimit - timeElapsed
+    if (timeRemaining > 0) {
+        const args = {}
+        args.timeout = timeRemaining
+        event.reply('refresh_reply', args)
+        return
+    }
+
+    lastUpdate = Date.now()
     const savedData = getSavedData()
     const xmlInventory = await updateInv(savedData)
+    data = parseData(xmlInventory)
 
     const args = {}
-    args.data = parseData(xmlInventory)
     args.accounts = savedData.accounts
+    args.newInventory = data
+    args.timeout = 0
     event.reply('refresh_reply', args)
 })
 

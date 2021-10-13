@@ -126,11 +126,19 @@ function setLoadingCircle (active, timeTaken, lastUpdate) {
     } else {
         loadingCircle.style.display = 'none'
         loadingInfo.style.display = 'inline'
-        loadingInfo.innerHTML = `<h4>Updated at ${lastUpdate} <br> (${timeTaken} ms)</h4>`
+        if (typeof timeTaken !== 'undefined' && typeof lastUpdate !== 'undefined') {
+            loadingInfo.innerHTML = `<h4>Updated at ${lastUpdate} <br> (${timeTaken} ms)</h4>`
+        }
     }
 }
 
 ipcRenderer.on('refresh_reply', (event, args) => {
+    if (args.timeout !== 0) {
+        alert(`Give the server hamster a break. Try again in ${Math.round(args.timeout / 1000)} seconds.`)
+        setLoadingCircle(false)
+        return
+    }
+
     console.log('Inventory: ' + args.newInventory)
     ipcRenderer.send('show_accounts')
 
@@ -145,7 +153,6 @@ ipcRenderer.on('refresh_reply', (event, args) => {
 
     if (args.accounts.length === 0) {
         alert('No accounts to refresh. Add one with "Add Account".')
-        // alert('Can\'t search an empty inventory: Try refreshing with "Refresh Inventory"')
     }
 })
 
