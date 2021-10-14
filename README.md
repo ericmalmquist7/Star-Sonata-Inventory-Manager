@@ -1,7 +1,7 @@
 # Star Sonata Inventory Manager
 Star Sonata Inventory Manager (SSIM) is a tool that allows users to search items in their Star Sonata accounts.
 
-![alt text](showcase\SSIM_0.1.0.png)
+![SSIM_V0.1.0.png](showcase\SSIM_V0.1.0.png)
 
 # How it works
 
@@ -17,6 +17,17 @@ If the Star Sonata developers decide to modify their asset page or how they stor
 
 # Installation
 
+### Windows
+
+1) Navigate to [SSIM]().
+
+### MacOS
+
+Not implemented.
+
+### Linux
+
+Not implemented.
 
 # How to contribute to this project
 
