@@ -48,7 +48,15 @@ Reach out to me on [Discord](https://discordapp.com/users/210931049474031616) or
 
 # Developer Environment Setup
 
+!!!This section is a work in progress!!!
 
+1) Clone this repository.
+2) Install (VSCode)[https://code.visualstudio.com/]
+3) Install (ESLint)[https://eslint.org/] plugin. (Optional)
+4) Install NPM, and maybe a bunch of other stuff. I need to figure out if dependencies are installed automatically from package.json, or if manual effort is required.
+5) Include a note about attaching a debugger to the main process
+
+I'll get around to this when it's not 1am.
 
 # Technical Information
 
