@@ -38,7 +38,7 @@ function testLogin (u, p) {
 
 function accountUpdate (u, p) {
     if (u === 'undefined' || p === 'undefined') {
-        return Promise.reject(new Error('Error: username or password undefinied.'))
+        return Promise.reject(new Error('Error: username or password undefined.'))
     }
     if (u === '' || p === '') {
         return Promise.reject(new Error('Error: username or password blank.'))

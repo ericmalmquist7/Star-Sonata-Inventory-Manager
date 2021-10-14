@@ -389,6 +389,7 @@ function createWindow (fileName) {
     const win = new BrowserWindow({
         width: 1400,
         height: 1000,
+        icon: path.join(__dirname, '/resources/icon.ico'),
         webPreferences: {
             enableRemoteModule: true,
             nodeIntegration: true,
