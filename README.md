@@ -19,7 +19,7 @@ If the Star Sonata developers decide to modify their asset page or how they stor
 
 ### Windows
 
-1) Download [SSIM-win32-x64.zip](https://github.com/ericmalmquist7/Star-Sonata-Inventory-Manager/blob/release/SSIM-win32-x64.zip).
+1) Download [SSIM-win32-x64.zip](https://github.com/ericmalmquist7/Star-Sonata-Inventory-Manager/raw/release/SSIM-win32-x64.zip).
 3) Unzip the file on your computer.
 4) Open the folder and run SSIM.exe!
 
