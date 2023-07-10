@@ -7,7 +7,7 @@ Star Sonata Inventory Manager (SSIM) is a tool that allows users to search items
 
 SSIM works by requesting XML data from https://www.starsonata.com/user/assets/. Account asset data is gathered and can be searched through the user interface. This allows the user to run a single search over all assets instead of opening and manually searching every XML file. Multiple accounts can be added.
 
-Account information is stored locally on your machine and passwords are only decrpyted when connecting to Star Sonata servers.
+Account information is stored locally on your machine and passwords are only decrypted when connecting to Star Sonata servers.
 
 ### Limitations
 
